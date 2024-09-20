@@ -1,23 +1,27 @@
-# inherit from a existing image to add the functionality
+# Inherit from a base Node.js image
 FROM node:20-alpine3.18
 
-# RUN addgroup app && adduser -S -G app app
-# USER app
+# Create a non-root user and group
+RUN addgroup app && adduser -S -G app app
 
 # Set the working directory and assign ownership to the non-root user
 WORKDIR /app
-
-# Copy the package.json and package-lock.json files into the image.
 COPY package*.json ./
 
-# Install the dependencies.
+# Install dependencies as root
+USER root
 RUN npm install
 
-# Copy the rest of the source files into the image.
+# Change ownership of the /app directory to the app user
+RUN chown -R app:app /app
+
+# Copy the remaining files and ensure they are owned by the app user
 COPY . .
+RUN chown -R app:app /app
 
-# Expose the port that the application listens on.
+# Switch to the non-root user
+USER app
+
+# Expose the port and run the application
 EXPOSE 3000
-
-# Run the application.
-CMD npm run dev
+CMD ["npm", "run", "dev"]
